@@ -10,6 +10,9 @@ public class User {
         this.password = password;
         this.nickname = nickname;
     }
+    public String getPassword() {
+        return password;
+    } //TODO
 
     public String getLogin() {
         return login;
