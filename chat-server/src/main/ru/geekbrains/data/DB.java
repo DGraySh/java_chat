@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DB {
+public class DB { //всю работу с БД вынес в отдельный класс
 
     private static Connection connection;
     private static Statement statement;
@@ -23,8 +23,8 @@ public class DB {
         }
     }
 
-    public static void addUserToDB(User user){
-        try {
+/*    public static void addUserToDB(User user){ //метод для добавления пользователей в ДБ, метод getPassword плохая
+        try {                                   //идея, но как его обойти не додумался
             connect();
             statement.executeUpdate("INSERT OR REPLACE INTO users (Login, Nickname, Password) VALUES ('" +
                     user.getLogin() + "', '" +
@@ -35,11 +35,10 @@ public class DB {
         } finally {
             disconnect();
         }
-    }
+    }*/
 
-    public static List<User> getUsersFromDB(){ //TODO
+    public static List<User> getUsersFromDB(){ //получить юзеров из ДБ и отдать в листе
         ArrayList<User> usersArr = new ArrayList<>();
-
         try {
             connect();
             ResultSet rs = statement.executeQuery("SELECT * FROM users");
@@ -54,11 +53,10 @@ public class DB {
         } finally {
         disconnect();
         }
-
         return usersArr;
     }
 
-    /*public static void changeNickname(String login, String nickname){ //TODO
+    /*public static void changeNickname(String login, String nickname){ //нужно доделать, затупил с реализацией
         try {
             statement.executeQuery("UPDATE INTO users set Nickname = " +
                     nickname + " WHERE Login = " + login);
@@ -67,7 +65,7 @@ public class DB {
         }
     }*/
 
-    public static void changeUserData(String login, String field, String nickname){ //TODO
+   /* public static void changeUserData(String login, String field, String nickname){ //нужно доделать, затупил с реализацией
         try {
             connect();
             PreparedStatement ps = connection.prepareStatement("UPDATE INTO users set ? = ? WHERE Login = ?;");
@@ -79,6 +77,6 @@ public class DB {
         } finally {
             disconnect();
         }
-    }
+    }*/
 
 }

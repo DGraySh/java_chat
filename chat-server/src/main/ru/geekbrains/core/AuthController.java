@@ -1,7 +1,7 @@
 package ru.geekbrains.core;
 
-import ru.geekbrains.data.*;
-
+import ru.geekbrains.data.DB;
+import ru.geekbrains.data.User;
 
 import java.util.HashMap;
 
@@ -13,7 +13,6 @@ public class AuthController {
 //        new User("admin", "admin", "sysroot");
 //        new User("alex", "123", "alex-st");
         for (User user : DB.getUsersFromDB()) {
-            System.out.println(user.getLogin()+ " " +user.getNickname()+ " " +user.getPassword());
             users.put(user.getLogin(), user);
         }
     }
