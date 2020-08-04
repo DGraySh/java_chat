@@ -1,5 +1,6 @@
 package ru.geekbrains.gui;
 
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import ru.geekbrains.chat.common.MessageLibrary;
 import ru.geekbrains.net.MessageSocketThread;
 import ru.geekbrains.net.MessageSocketThreadListener;
@@ -11,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -38,10 +40,12 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private final JButton buttonSend = new JButton("Send");
 
     private final JList<String> listUsers = new JList<>();
-    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+    private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
     private static final String WINDOW_TITLE = "Chat Client";
     private MessageSocketThread socketThread;
     private String nickname;
+    private final String chatHistoryFile = "history.txt";
+
 
     private static void addTextToFile(String fileName, String text) {
         try (FileWriter outFile = new FileWriter(fileName, true);
@@ -109,7 +113,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
 
         });
 
-        //readHistory(); //при запуске вывести в chatArea историю последней переписки, нужно допилить
+        putHistoryInChatArea(readHistory(chatHistoryFile)); //при запуске вывести в chatArea историю последней переписки, нужно допилить
 
         messageField.addActionListener(e -> sendMessage(messageField.getText()));
         buttonSend.addActionListener(e -> {
@@ -131,8 +135,8 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         socketThread.sendMessage(MessageLibrary.getTypeBroadcastClient(nickname, msg));
     }
 
-    private void putIntoFileHistory(String user, String msg) {
-        try (PrintWriter pw = new PrintWriter(new FileOutputStream(user + "-history.txt", true))) {
+    private void putIntoFileHistory(String user, String msg, String fileName) {
+        try (PrintWriter pw = new PrintWriter(new FileOutputStream(fileName, true))) {
             pw.print(msg);
         } catch (FileNotFoundException e) {
             showError(msg);
@@ -146,7 +150,13 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     public void putMessageInChatArea(String user, String msg) {
         String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), user, msg);
         chatArea.append(messageToChat);
-        putIntoFileHistory(user, messageToChat);
+        putIntoFileHistory(user, messageToChat, chatHistoryFile);
+    }
+
+    public void putHistoryInChatArea(String history) {
+        //String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), user, msg);
+        chatArea.append(history);
+        //putIntoFileHistory(user, messageToChat, chatHistoryFile);
     }
 
     @Override
@@ -168,19 +178,29 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         JOptionPane.showMessageDialog(this, msg, "Exception!", JOptionPane.ERROR_MESSAGE);
     }
 
-//    private void readHistory() { //нужно загнать в массив и перевернуть строки в обратном порядке
-//        StringBuilder history = new StringBuilder(); // еще надо добавить проверку на наличие строк в файле
-//        try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File("log.txt"), Charset.defaultCharset())) {
-//            int counter = 0;
-//            while (counter < 5) {
-//                history.append(file.readLine() + "\n");
-//                counter++;
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        System.out.println(history);
-//    }
+    private String readHistory(String fileName) { //нужно загнать в массив и перевернуть строки в обратном порядке
+        StringBuilder history = new StringBuilder(); // еще надо добавить проверку на наличие строк в файле
+        if ((new File(fileName)).exists()) {
+            try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File(fileName), Charset.defaultCharset())) {
+                int counter = 0;
+                var line = file.readLine();
+                while (counter < 100 && line != null) {
+                    history.append(line).append("\n");
+                    System.out.println(line);
+//                    BufferedReader reader = new BufferedReader(new FileReader(fileName));
+//                    reader.
+//
+//
+//                    line = file.readLine();
+                    counter++;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(history);
+        return history.toString();
+    }
 
     @Override
     public void onSocketReady(MessageSocketThread thread) {
