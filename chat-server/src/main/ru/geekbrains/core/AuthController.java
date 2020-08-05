@@ -1,35 +1,39 @@
 package ru.geekbrains.core;
 
-import ru.geekbrains.data.DB;
-import ru.geekbrains.data.User;
-
-import java.util.HashMap;
+import java.sql.*;
 
 public class AuthController {
-
-    HashMap<String, User> users = new HashMap<>();
 
     public void init() {
 //        new User("admin", "admin", "sysroot");
 //        new User("alex", "123", "alex-st");
-        for (User user : DB.getUsersFromDB()) {
-            users.put(user.getLogin(), user);
-        }
     }
 
     public String getNickname(String login, String password) {
-        User user = users.get(login);
-        if (user != null && user.isPasswordCorrect(password)) {
-            return user.getNickname();
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:usersDB.db");
+             PreparedStatement ps = connection.prepareStatement("SELECT Nickname FROM users WHERE Login = ? and Password = ?")) {
+            ps.setString(1, login);
+            ps.setString(2, password);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("Nickname");
+                }
+            }
+        } catch (SQLException e) {
+
         }
         return null;
     }
 
-//    private ArrayList<User> receiveUsers() {
-//        ArrayList<User> usersArr = new ArrayList<>();
-//        usersArr.add(new User("admin", "admin", "sysroot"));
-//        usersArr.add(new User("alex", "123", "alex-st"));
-//        return usersArr;
-//    }
+    public void setNickname(String oldNickname, String newNickname) {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:usersDB.db");
+             PreparedStatement ps = connection.prepareStatement("UPDATE users set Nickname = ? WHERE Nickname = ?")) {
+            ps.setString(1, newNickname);
+            ps.setString(2, oldNickname);
+            ps.executeQuery();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

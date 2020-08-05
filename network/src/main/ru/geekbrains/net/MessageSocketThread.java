@@ -7,13 +7,13 @@ import java.net.Socket;
 
 public class MessageSocketThread extends Thread {
 
-    private Socket socket;
-    private MessageSocketThreadListener listener;
+    private final Socket socket;
+    private final MessageSocketThreadListener listener;
     private DataInputStream in;
     private DataOutputStream out;
     private boolean isClosed = false;
 
-    public MessageSocketThread (MessageSocketThreadListener listener, String name, Socket socket) {
+    public MessageSocketThread(MessageSocketThreadListener listener, String name, Socket socket) {
         super(name);
         this.socket = socket;
         this.listener = listener;
@@ -32,8 +32,7 @@ public class MessageSocketThread extends Thread {
                 }
             }
         } catch (IOException e) {
-            close();
-            System.out.println(e);
+            System.out.println(e); //java.io.EOFException
         } finally {
             close();
         }

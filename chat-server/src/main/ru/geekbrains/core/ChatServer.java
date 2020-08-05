@@ -13,9 +13,9 @@ import java.util.Vector;
 public class ChatServer implements ServerSocketThreadListener, MessageSocketThreadListener {
 
     private ServerSocketThread serverSocketThread;
-    private ChatServerListener listener;
+    private final ChatServerListener listener;
     private AuthController authController;
-    private Vector<ClientSessionThread> clients = new Vector<>();
+    private final Vector<ClientSessionThread> clients = new Vector<>();
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -82,12 +82,18 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     @Override
     public void onMessageReceived(MessageSocketThread thread, String msg) {
-        ClientSessionThread clientSession = (ClientSessionThread)thread;
-        if (clientSession.isAuthorized()) {
+        ClientSessionThread clientSession = (ClientSessionThread) thread;
+        if (clientSession.isAuthorized() && checkChangeNickMsg(msg)) {
+            changeNickname(clientSession, msg);
+        } else if (clientSession.isAuthorized()) {
             processAuthorizedUserMessage(msg);
         } else {
             processUnauthorizedUserMessage(clientSession, msg);
         }
+    }
+
+    private boolean checkChangeNickMsg(String msg) {
+        return MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME;
     }
 
     private void processAuthorizedUserMessage(String msg) {
@@ -100,16 +106,18 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
     }
 
-//    private void changeNickname(String msg) {
-//        if(MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME)
-//        DB.changeUserData(client.getName(), "Nickname", );
-//    }
-
+    private void changeNickname(ClientSessionThread clientSession, String msg) {
+        //if (MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME) {
+        String[] arr = msg.split(MessageLibrary.DELIMITER);
+        if (arr.length < 3 && arr[0].equals(MessageLibrary.CHANGE_NICKNAME)) {
+            authController.setNickname(clientSession.getNickname(), arr[1]);
+        }
+    }
 
 
     private void sendToAllAuthorizedClients(String msg) {
         for (ClientSessionThread client : clients) {
-            if(!client.isAuthorized()) {
+            if (!client.isAuthorized()) {
                 continue;
             }
             client.sendMessage(msg);
@@ -177,6 +185,4 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
         return null;
     }
-
-
 }

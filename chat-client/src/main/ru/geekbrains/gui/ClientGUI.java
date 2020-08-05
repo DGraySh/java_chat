@@ -23,8 +23,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
-
-
+    private static final String WINDOW_TITLE = "Chat Client";
     private final JTextArea chatArea = new JTextArea();
     private final JPanel panelTop = new JPanel(new GridLayout(2, 3));
     private final JTextField ipAddressField = new JTextField("127.0.0.1");
@@ -33,18 +32,15 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private final JTextField loginField = new JTextField("login");
     private final JPasswordField passwordField = new JPasswordField("123");
     private final JButton buttonLogin = new JButton("Login");
-
     private final JPanel panelBottom = new JPanel(new BorderLayout());
     private final JButton buttonDisconnect = new JButton("<html><b>Disconnect</b></html>");
     private final JTextField messageField = new JTextField();
     private final JButton buttonSend = new JButton("Send");
-
     private final JList<String> listUsers = new JList<>();
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-    private static final String WINDOW_TITLE = "Chat Client";
+    private final String chatHistoryFile = "_" + "history.txt";
     private MessageSocketThread socketThread;
     private String nickname;
-    private final String chatHistoryFile = "_" + "history.txt";
     private String login;
 
 
@@ -57,10 +53,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             e.printStackTrace();
         }
     }*/
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(ClientGUI::new);
-    }
 
     ClientGUI() {
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -122,6 +114,10 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         setVisible(true);
     }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(ClientGUI::new);
+    }
+
     public void sendMessage(String msg) {
         if (msg.isEmpty()) {
             return;
@@ -152,6 +148,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     }
 
     public void putHistoryInChatArea(String history) {
+        chatArea.setText("");
         chatArea.append(history);
     }
 
@@ -179,7 +176,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         if ((new File(fileName)).exists()) {
             try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File(fileName), Charset.defaultCharset())) {
                 int counter = 0;
-                var line = file.readLine();
+                String line = file.readLine();
                 while (counter < 99 && line != null) {
                     history.insert(0, line + "\n");
                     line = file.readLine();
