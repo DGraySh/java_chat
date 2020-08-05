@@ -1,8 +1,8 @@
 package ru.geekbrains.core;
 
+import ru.geekbrains.data.DB;
 import ru.geekbrains.data.User;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class AuthController {
@@ -10,7 +10,9 @@ public class AuthController {
     HashMap<String, User> users = new HashMap<>();
 
     public void init() {
-        for (User user : receiveUsers()) {
+//        new User("admin", "admin", "sysroot");
+//        new User("alex", "123", "alex-st");
+        for (User user : DB.getUsersFromDB()) {
             users.put(user.getLogin(), user);
         }
     }
@@ -23,11 +25,11 @@ public class AuthController {
         return null;
     }
 
-    private ArrayList<User> receiveUsers() {
-        ArrayList<User> usersArr = new ArrayList<>();
-        usersArr.add(new User("admin", "admin", "sysroot"));
-        usersArr.add(new User("alex", "123", "alex-st"));
-        return usersArr;
-    }
+//    private ArrayList<User> receiveUsers() {
+//        ArrayList<User> usersArr = new ArrayList<>();
+//        usersArr.add(new User("admin", "admin", "sysroot"));
+//        usersArr.add(new User("alex", "123", "alex-st"));
+//        return usersArr;
+//    }
 
 }

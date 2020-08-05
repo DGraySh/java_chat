@@ -18,7 +18,8 @@ public class MessageLibrary {
         TYPE_BROADCAST,
         TYPE_BROADCAST_CLIENT,
         MSG_FORMAT_ERROR,
-        USER_LIST
+        USER_LIST,
+        CHANGE_NICKNAME
     }
 
     public static final String DELIMITER = "##";
@@ -26,6 +27,8 @@ public class MessageLibrary {
     public static final String AUTH_REQUEST = "request";
     public static final String AUTH_ACCEPT = "accept";
     public static final String AUTH_DENIED = "denied";
+    public static final String CHANGE_NICKNAME = "/change_nick";
+
     /* то есть сообщение, которое будет посылаться всем */
     public static final String TYPE_BROADCAST = "/broadcast";
 
@@ -87,6 +90,8 @@ public class MessageLibrary {
                 return MESSAGE_TYPE.MSG_FORMAT_ERROR;
             case USER_LIST:
                 return MESSAGE_TYPE.USER_LIST;
+            case CHANGE_NICKNAME:
+                return MESSAGE_TYPE.CHANGE_NICKNAME;
             default:
                 return MESSAGE_TYPE.UNKNOWN;
         }

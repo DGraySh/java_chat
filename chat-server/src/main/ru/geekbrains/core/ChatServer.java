@@ -100,6 +100,13 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
     }
 
+//    private void changeNickname(String msg) {
+//        if(MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME)
+//        DB.changeUserData(client.getName(), "Nickname", );
+//    }
+
+
+
     private void sendToAllAuthorizedClients(String msg) {
         for (ClientSessionThread client : clients) {
             if(!client.isAuthorized()) {
@@ -152,7 +159,6 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         StringBuilder sb = new StringBuilder();
         for (ClientSessionThread client : clients) {
             if (!client.isAuthorized()) {
-
                 continue;
             }
             sb.append(client.getNickname()).append(MessageLibrary.DELIMITER);
@@ -171,4 +177,6 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
         return null;
     }
+
+
 }
