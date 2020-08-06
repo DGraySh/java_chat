@@ -1,6 +1,8 @@
 package ru.geekbrains.gui;
 
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import ru.geekbrains.chat.common.MessageLibrary;
+import ru.geekbrains.core.AuthController;
 import ru.geekbrains.net.MessageSocketThread;
 import ru.geekbrains.net.MessageSocketThreadListener;
 
@@ -11,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -21,8 +24,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
-
-
+    private static final String WINDOW_TITLE = "Chat Client";
     private final JTextArea chatArea = new JTextArea();
     private final JPanel panelTop = new JPanel(new GridLayout(2, 3));
     private final JTextField ipAddressField = new JTextField("127.0.0.1");
@@ -31,31 +33,18 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private final JTextField loginField = new JTextField("login");
     private final JPasswordField passwordField = new JPasswordField("123");
     private final JButton buttonLogin = new JButton("Login");
-
     private final JPanel panelBottom = new JPanel(new BorderLayout());
     private final JButton buttonDisconnect = new JButton("<html><b>Disconnect</b></html>");
+    private final JScrollPane scrollPaneChatArea;
     private final JTextField messageField = new JTextField();
     private final JButton buttonSend = new JButton("Send");
-
     private final JList<String> listUsers = new JList<>();
-    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-    private static final String WINDOW_TITLE = "Chat Client";
+    private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+    private final String chatHistoryFile = "_" + "history.txt";
     private MessageSocketThread socketThread;
     private String nickname;
+    private String login;
 
-    private static void addTextToFile(String fileName, String text) {
-        try (FileWriter outFile = new FileWriter(fileName, true);
-             BufferedWriter fileWriter = new BufferedWriter(outFile)) {
-            fileWriter.newLine();
-            fileWriter.write(text);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(ClientGUI::new);
-    }
 
     ClientGUI() {
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -67,7 +56,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         setAlwaysOnTop(true);
 
         JScrollPane scrollPaneUsers = new JScrollPane(listUsers);
-        JScrollPane scrollPaneChatArea = new JScrollPane(chatArea);
+        scrollPaneChatArea = new JScrollPane(chatArea);
         scrollPaneUsers.setPreferredSize(new Dimension(100, 0));
 
         chatArea.setLineWrap(true);
@@ -97,42 +86,52 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             try {
                 socket = new Socket(ipAddressField.getText(), Integer.parseInt(portField.getText()));
                 socketThread = new MessageSocketThread(this, "Client" + loginField.getText(), socket);
+                login = loginField.getText();
             } catch (IOException ioException) {
                 showError(ioException.getMessage());
             }
-
         });
 
-        buttonDisconnect.addActionListener(e -> {
-            socketThread.close();
-            //  onSocketClosed();
-
-        });
-
-        //readHistory(); //при запуске вывести в chatArea историю последней переписки, нужно допилить
-
+        buttonDisconnect.addActionListener(e -> socketThread.close());
         messageField.addActionListener(e -> sendMessage(messageField.getText()));
         buttonSend.addActionListener(e -> {
             sendMessage(messageField.getText());
             messageField.grabFocus();
         });
-
         setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(ClientGUI::new);
     }
 
     public void sendMessage(String msg) {
         if (msg.isEmpty()) {
             return;
         }
-        //23.06.2020 12:20:25 <Login>: сообщение
-        putMessageInChatArea(nickname, msg);
-        messageField.setText("");
-        messageField.grabFocus();
-        socketThread.sendMessage(MessageLibrary.getTypeBroadcastClient(nickname, msg));
+        //проверка на запрос о смене ника "/change_nick##login##new_nickname"
+        if (MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME) {
+            putMessageInChatArea(nickname, msg);
+            messageField.setText("");
+            messageField.grabFocus();
+            socketThread.sendMessage(msg);
+            this.nickname = AuthController.getNewNickname(login);
+        } else {
+            //23.06.2020 12:20:25 <Login>: сообщение
+            putMessageInChatArea(nickname, msg);
+            messageField.setText("");
+            messageField.grabFocus();
+            socketThread.sendMessage(MessageLibrary.getTypeBroadcastClient(nickname, msg));
+        }
     }
 
-    private void putIntoFileHistory(String user, String msg) {
-        try (PrintWriter pw = new PrintWriter(new FileOutputStream(user + "-history.txt", true))) {
+    // всегда прокручиваем чат вниз
+    private void scrollDownChatArea() {
+        scrollPaneChatArea.getVerticalScrollBar().addAdjustmentListener(e -> e.getAdjustable().setValue(e.getAdjustable().getMaximum()));
+    }
+
+    private void putIntoFileHistory(String msg, String fileName) {
+        try (PrintWriter pw = new PrintWriter(new FileOutputStream(login + fileName, true))) {
             pw.print(msg);
         } catch (FileNotFoundException e) {
             showError(msg);
@@ -146,7 +145,13 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     public void putMessageInChatArea(String user, String msg) {
         String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), user, msg);
         chatArea.append(messageToChat);
-        putIntoFileHistory(user, messageToChat);
+        putIntoFileHistory(messageToChat, chatHistoryFile);
+    }
+
+    public void putHistoryInChatArea(String history) {
+        chatArea.setText("");
+        chatArea.append(history);
+        scrollDownChatArea();
     }
 
     @Override
@@ -168,19 +173,23 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         JOptionPane.showMessageDialog(this, msg, "Exception!", JOptionPane.ERROR_MESSAGE);
     }
 
-//    private void readHistory() { //нужно загнать в массив и перевернуть строки в обратном порядке
-//        StringBuilder history = new StringBuilder(); // еще надо добавить проверку на наличие строк в файле
-//        try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File("log.txt"), Charset.defaultCharset())) {
-//            int counter = 0;
-//            while (counter < 5) {
-//                history.append(file.readLine() + "\n");
-//                counter++;
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        System.out.println(history);
-//    }
+    private String readHistory(String fileName) { //читаем файл с корнца, отбираем 100 строк
+        StringBuilder history = new StringBuilder();
+        if ((new File(fileName)).exists()) {
+            try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File(fileName), Charset.defaultCharset())) {
+                int counter = 0;
+                String line = file.readLine();
+                while (counter < 99 && line != null) {
+                    history.insert(0, line + "\n");
+                    line = file.readLine();
+                    counter++;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return history.toString();
+    }
 
     @Override
     public void onSocketReady(MessageSocketThread thread) {
@@ -195,6 +204,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         panelBottom.setVisible(false);
         setTitle(WINDOW_TITLE);
         listUsers.setListData(new String[0]);
+        chatArea.setText("");
     }
 
     /*
@@ -203,6 +213,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     @Override
     public void onMessageReceived(MessageSocketThread thread, String msg) {
         handleMessage(msg);
+        scrollDownChatArea();
     }
 
     @Override
@@ -217,6 +228,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             case AUTH_ACCEPT:
                 this.nickname = values[2];
                 setTitle(WINDOW_TITLE + " authorized with nickname: " + this.nickname);
+                putHistoryInChatArea(readHistory(login + chatHistoryFile)); //при запуске вывести в chatArea историю последней переписки(100 строк)
                 break;
             case AUTH_DENIED:
                 putMessageInChatArea("server", msg);

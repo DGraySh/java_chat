@@ -12,7 +12,6 @@ public class ClientSessionThread extends MessageSocketThread {
     private String nickname;
     private boolean reconnected = false;
 
-
     public ClientSessionThread(MessageSocketThreadListener listener, String name, Socket socket) {
         super(listener, name, socket);
     }

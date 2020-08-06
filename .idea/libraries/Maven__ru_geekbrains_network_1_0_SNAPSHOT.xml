@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Maven: ru.geekbrains:network:1.0-SNAPSHOT">
+    <CLASSES />
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/ru/geekbrains/network/1.0-SNAPSHOT/network-1.0-SNAPSHOT-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/ru/geekbrains/network/1.0-SNAPSHOT/network-1.0-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
