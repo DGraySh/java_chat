@@ -25,12 +25,29 @@ public class AuthController {
         return null;
     }
 
-    public void setNickname(String oldNickname, String newNickname) {
+    // получение ника из БД по логину
+    public static String getNewNickname(String login) {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:usersDB.db");
-             PreparedStatement ps = connection.prepareStatement("UPDATE users set Nickname = ? WHERE Nickname = ?")) {
+             PreparedStatement ps = connection.prepareStatement("SELECT Nickname FROM users WHERE Login = ?")) {
+            ps.setString(1, login);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("Nickname");
+                }
+            }
+        } catch (SQLException e) {
+
+        }
+        return null;
+    }
+
+    public void setNickname(String oldNickname, String login, String newNickname) {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:usersDB.db");
+             PreparedStatement ps = connection.prepareStatement("UPDATE users set Nickname = ? WHERE Nickname = ? and Login = ?;")) {
             ps.setString(1, newNickname);
             ps.setString(2, oldNickname);
-            ps.executeQuery();
+            ps.setString(3, login);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

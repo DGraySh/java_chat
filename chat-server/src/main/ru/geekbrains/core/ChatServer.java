@@ -83,7 +83,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     @Override
     public void onMessageReceived(MessageSocketThread thread, String msg) {
         ClientSessionThread clientSession = (ClientSessionThread) thread;
-        if (clientSession.isAuthorized() && checkChangeNickMsg(msg)) {
+        if (checkChangeNickMsg(msg) && clientSession.isAuthorized()) { //смена ника
             changeNickname(clientSession, msg);
         } else if (clientSession.isAuthorized()) {
             processAuthorizedUserMessage(msg);
@@ -92,6 +92,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
     }
 
+    //проверка на поступившее сообщение о смене ника
     private boolean checkChangeNickMsg(String msg) {
         return MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME;
     }
@@ -106,14 +107,15 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
     }
 
+    // обработка служебного сообщения о смене ника в формате "/change_nick##login##new_nickname"
     private void changeNickname(ClientSessionThread clientSession, String msg) {
-        //if (MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME) {
         String[] arr = msg.split(MessageLibrary.DELIMITER);
-        if (arr.length < 3 && arr[0].equals(MessageLibrary.CHANGE_NICKNAME)) {
-            authController.setNickname(clientSession.getNickname(), arr[1]);
+        if (arr.length > 2 && arr[0].equals(MessageLibrary.CHANGE_NICKNAME)) {
+            authController.setNickname(clientSession.getNickname(), arr[1], arr[2]); // замена ника в БД
+            clientSession.setNickname(AuthController.getNewNickname(arr[1])); // сменить ник в листе сессий на текущий ник из БД
+            sendToAllAuthorizedClients(MessageLibrary.getUserList(getUsersList())); //рассылка юзерлиста
         }
     }
-
 
     private void sendToAllAuthorizedClients(String msg) {
         for (ClientSessionThread client : clients) {

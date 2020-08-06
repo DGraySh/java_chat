@@ -32,7 +32,7 @@ public class MessageSocketThread extends Thread {
                 }
             }
         } catch (IOException e) {
-            System.out.println(e); //java.io.EOFException
+            System.out.println(e);
         } finally {
             close();
         }

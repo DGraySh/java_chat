@@ -2,6 +2,7 @@ package ru.geekbrains.gui;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import ru.geekbrains.chat.common.MessageLibrary;
+import ru.geekbrains.core.AuthController;
 import ru.geekbrains.net.MessageSocketThread;
 import ru.geekbrains.net.MessageSocketThreadListener;
 
@@ -34,6 +35,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private final JButton buttonLogin = new JButton("Login");
     private final JPanel panelBottom = new JPanel(new BorderLayout());
     private final JButton buttonDisconnect = new JButton("<html><b>Disconnect</b></html>");
+    private final JScrollPane scrollPaneChatArea;
     private final JTextField messageField = new JTextField();
     private final JButton buttonSend = new JButton("Send");
     private final JList<String> listUsers = new JList<>();
@@ -43,16 +45,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private String nickname;
     private String login;
 
-
-    /*private static void addTextToFile(String fileName, String text) {
-        try (FileWriter outFile = new FileWriter(fileName, true);
-             BufferedWriter fileWriter = new BufferedWriter(outFile)) {
-            fileWriter.newLine();
-            fileWriter.write(text);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }*/
 
     ClientGUI() {
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -64,7 +56,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         setAlwaysOnTop(true);
 
         JScrollPane scrollPaneUsers = new JScrollPane(listUsers);
-        JScrollPane scrollPaneChatArea = new JScrollPane(chatArea);
+        scrollPaneChatArea = new JScrollPane(chatArea);
         scrollPaneUsers.setPreferredSize(new Dimension(100, 0));
 
         chatArea.setLineWrap(true);
@@ -98,19 +90,14 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             } catch (IOException ioException) {
                 showError(ioException.getMessage());
             }
-
         });
 
-        buttonDisconnect.addActionListener(e -> {
-            //putIntoFileHistory(nickname + " disconnected" + "\n", chatHistoryFile);
-            socketThread.close();
-        });
+        buttonDisconnect.addActionListener(e -> socketThread.close());
         messageField.addActionListener(e -> sendMessage(messageField.getText()));
         buttonSend.addActionListener(e -> {
             sendMessage(messageField.getText());
             messageField.grabFocus();
         });
-
         setVisible(true);
     }
 
@@ -122,14 +109,28 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         if (msg.isEmpty()) {
             return;
         }
-        //23.06.2020 12:20:25 <Login>: сообщение
-        putMessageInChatArea(nickname, msg);
-        messageField.setText("");
-        messageField.grabFocus();
-        socketThread.sendMessage(MessageLibrary.getTypeBroadcastClient(nickname, msg));
+        //проверка на запрос о смене ника "/change_nick##login##new_nickname"
+        if (MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME) {
+            putMessageInChatArea(nickname, msg);
+            messageField.setText("");
+            messageField.grabFocus();
+            socketThread.sendMessage(msg);
+            this.nickname = AuthController.getNewNickname(login);
+        } else {
+            //23.06.2020 12:20:25 <Login>: сообщение
+            putMessageInChatArea(nickname, msg);
+            messageField.setText("");
+            messageField.grabFocus();
+            socketThread.sendMessage(MessageLibrary.getTypeBroadcastClient(nickname, msg));
+        }
     }
 
-    private void putIntoFileHistory(/*String user, */String msg, String fileName) {
+    // всегда прокручиваем чат вниз
+    private void scrollDownChatArea() {
+        scrollPaneChatArea.getVerticalScrollBar().addAdjustmentListener(e -> e.getAdjustable().setValue(e.getAdjustable().getMaximum()));
+    }
+
+    private void putIntoFileHistory(String msg, String fileName) {
         try (PrintWriter pw = new PrintWriter(new FileOutputStream(login + fileName, true))) {
             pw.print(msg);
         } catch (FileNotFoundException e) {
@@ -144,12 +145,13 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     public void putMessageInChatArea(String user, String msg) {
         String messageToChat = String.format("%s <%s>: %s%n", sdf.format(Calendar.getInstance().getTime()), user, msg);
         chatArea.append(messageToChat);
-        putIntoFileHistory(/*user, */messageToChat, chatHistoryFile);
+        putIntoFileHistory(messageToChat, chatHistoryFile);
     }
 
     public void putHistoryInChatArea(String history) {
         chatArea.setText("");
         chatArea.append(history);
+        scrollDownChatArea();
     }
 
     @Override
@@ -202,6 +204,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         panelBottom.setVisible(false);
         setTitle(WINDOW_TITLE);
         listUsers.setListData(new String[0]);
+        chatArea.setText("");
     }
 
     /*
@@ -210,6 +213,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     @Override
     public void onMessageReceived(MessageSocketThread thread, String msg) {
         handleMessage(msg);
+        scrollDownChatArea();
     }
 
     @Override
