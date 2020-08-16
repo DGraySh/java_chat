@@ -1,5 +1,7 @@
 package ru.geekbrains.core;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.geekbrains.chat.common.MessageLibrary;
 import ru.geekbrains.net.MessageSocketThread;
 import ru.geekbrains.net.MessageSocketThreadListener;
@@ -16,6 +18,8 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     private final ChatServerListener listener;
     private AuthController authController;
     private final Vector<ClientSessionThread> clients = new Vector<>();
+    private final Logger logger = LogManager.getLogger(ChatServer.class);
+
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -29,6 +33,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         serverSocketThread.start();
         authController = new AuthController();
         authController.init();
+        logger.info("Server started");
     }
 
     public void stop() {
@@ -37,11 +42,12 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         }
         serverSocketThread.interrupt();
         disconnectAll();
+        logger.info("Server stopped");
     }
 
     @Override
     public void onClientConnected() {
-        logMessage("Client connected");
+        logger.info("Client connected");
     }
 
     @Override
@@ -52,11 +58,13 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     @Override
     public void onException(MessageSocketThread thread, Throwable throwable) {
         throwable.printStackTrace();
+        logger.warn("Error: ", throwable);
     }
 
     @Override
     public void onException(Throwable throwable) {
         throwable.printStackTrace();
+        logger.warn("Error: ", throwable);
     }
 
     @Override
@@ -66,13 +74,14 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
 
     @Override
     public void onSocketReady(MessageSocketThread thread) {
-        logMessage("Socket ready");
+        logger.info("Socket ready");
     }
 
     @Override
     public void onSocketClosed(MessageSocketThread thread) {
         ClientSessionThread clientSession = (ClientSessionThread) thread;
-        logMessage("Socket Closed");
+        String nick = clientSession.getNickname();
+        logger.info("Socket for {} closed", nick);
         clients.remove(thread);
         if (clientSession.isAuthorized() && !clientSession.isReconnected()) {
             sendToAllAuthorizedClients(MessageLibrary.getBroadcastMessage("server", "User " + clientSession.getNickname() + " disconnected"));
@@ -98,7 +107,7 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     }
 
     private void processAuthorizedUserMessage(String msg) {
-        logMessage(msg);
+        logger.debug(msg);
         for (ClientSessionThread client : clients) {
             if (!client.isAuthorized()) {
                 continue;
@@ -110,9 +119,11 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
     // обработка служебного сообщения о смене ника в формате "/change_nick##login##new_nickname"
     private void changeNickname(ClientSessionThread clientSession, String msg) {
         String[] arr = msg.split(MessageLibrary.DELIMITER);
+        String oldNickname = clientSession.getNickname();
         if (arr.length > 2 && arr[0].equals(MessageLibrary.CHANGE_NICKNAME)) {
-            authController.setNickname(clientSession.getNickname(), arr[1], arr[2]); // замена ника в БД
+            authController.setNickname(oldNickname, arr[1], arr[2]); // замена ника в БД
             clientSession.setNickname(AuthController.getNewNickname(arr[1])); // сменить ник в листе сессий на текущий ник из БД
+            logger.info("User {} changed nick to {}", oldNickname, arr[2]);
             sendToAllAuthorizedClients(MessageLibrary.getUserList(getUsersList())); //рассылка юзерлиста
         }
     }
@@ -158,11 +169,8 @@ public class ChatServer implements ServerSocketThreadListener, MessageSocketThre
         for (ClientSessionThread client : currentClients) {
             client.close();
             clients.remove(client);
+            logger.info("All users disconnected");
         }
-    }
-
-    private void logMessage(String msg) {
-        listener.onChatServerMessage(msg);
     }
 
     public String getUsersList() {

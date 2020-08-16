@@ -116,6 +116,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             messageField.grabFocus();
             socketThread.sendMessage(msg);
             this.nickname = AuthController.getNewNickname(login);
+            setTitle(WINDOW_TITLE + " authorized with nickname: " + this.nickname);
         } else {
             //23.06.2020 12:20:25 <Login>: сообщение
             putMessageInChatArea(nickname, msg);
@@ -127,7 +128,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
 
     // всегда прокручиваем чат вниз
     private void scrollDownChatArea() {
-        scrollPaneChatArea.getVerticalScrollBar().addAdjustmentListener(e -> e.getAdjustable().setValue(e.getAdjustable().getMaximum()));
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
     }
 
     private void putIntoFileHistory(String msg, String fileName) {
@@ -151,7 +152,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     public void putHistoryInChatArea(String history) {
         chatArea.setText("");
         chatArea.append(history);
-        scrollDownChatArea();
+        //scrollDownChatArea();
     }
 
     @Override
@@ -255,6 +256,9 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
                     return;
                 }
                 putMessageInChatArea(srcNickname, values[2]);
+                break;
+            case CHANGE_NICKNAME:
+                putMessageInChatArea("server", "User " + values[1] + " changed nickname on: " + values[2]);
                 break;
             default:
                 throw new RuntimeException("Unknown message: " + msg);
