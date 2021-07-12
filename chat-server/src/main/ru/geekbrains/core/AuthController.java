@@ -5,8 +5,7 @@ import java.sql.*;
 public class AuthController {
 
     public void init() {
-//        new User("admin", "admin", "sysroot");
-//        new User("alex", "123", "alex-st");
+
     }
 
     public String getNickname(String login, String password) {
@@ -25,7 +24,6 @@ public class AuthController {
         return null;
     }
 
-    // получение ника из БД по логину
     public static String getNewNickname(String login) {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:usersDB.db");
              PreparedStatement ps = connection.prepareStatement("SELECT Nickname FROM users WHERE Login = ?")) {
