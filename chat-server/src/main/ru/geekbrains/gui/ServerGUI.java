@@ -57,14 +57,6 @@ public class ServerGUI extends JFrame implements ActionListener, Thread.Uncaught
     public void uncaughtException(Thread t, Throwable e) {
         e.printStackTrace();
         StackTraceElement[] ste = e.getStackTrace();
-        /*StringBuilder sb = new StringBuilder();
-        sb.append("Exception in \"")
-                .append(t.getName())
-                .append("\": ")
-                .append(e.getClass().getCanonicalName())
-                .append(" ")
-                .append(e.getMessage()) ... */
-
         String msg = String.format("Exception in \"%s\": %s %s%n\t %s",
                 t.getName(), e.getClass().getCanonicalName(), e.getMessage(), ste[0]);
         JOptionPane.showMessageDialog(this, msg, "Exception!", JOptionPane.ERROR_MESSAGE);
