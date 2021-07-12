@@ -2,15 +2,6 @@ package ru.geekbrains.chat.common;
 
 public class MessageLibrary {
 
-    /*
-     * /auth|request|login|password
-     * /auth|accept|nickname
-     * /auth|denied
-     * /broadcast|msg
-     *
-     * /msg_format_error|msg
-     * */
-
     public enum MESSAGE_TYPE {
         UNKNOWN,
         AUTH_ACCEPT,
@@ -28,13 +19,8 @@ public class MessageLibrary {
     public static final String AUTH_ACCEPT = "accept";
     public static final String AUTH_DENIED = "denied";
     public static final String CHANGE_NICKNAME = "/change_nick";
-
-    /* то есть сообщение, которое будет посылаться всем */
     public static final String TYPE_BROADCAST = "/broadcast";
-
-    /* если мы вдруг не поняли, что за сообщение и не смогли разобрать */
     public static final String MSG_FORMAT_ERROR = "/msg_format_error";
-
     public static final String TYPE_BROADCAST_CLIENT = "/client_msg";
     public static final String USER_LIST = "/user_list";
 
