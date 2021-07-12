@@ -12,10 +12,6 @@ public class User {
 
     }
 
-    public String getPassword() {
-        return password;
-    } //TODO убрать этот метод!
-
     public String getLogin() {
         return login;
     }
