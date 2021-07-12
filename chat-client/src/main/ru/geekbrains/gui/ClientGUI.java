@@ -146,7 +146,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     public void putHistoryInChatArea(String history) {
         chatArea.setText("");
         chatArea.append(history);
-        //scrollDownChatArea();
     }
 
     @Override
@@ -168,7 +167,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         JOptionPane.showMessageDialog(this, msg, "Exception!", JOptionPane.ERROR_MESSAGE);
     }
 
-    private String readHistory(String fileName) { //читаем файл с корнца, отбираем 100 строк
+    private String readHistory(String fileName) {
         StringBuilder history = new StringBuilder();
         if ((new File(fileName)).exists()) {
             try (ReversedLinesFileReader file = new ReversedLinesFileReader(new File(fileName), Charset.defaultCharset())) {
@@ -220,7 +219,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             case AUTH_ACCEPT:
                 this.nickname = values[2];
                 setTitle(WINDOW_TITLE + " authorized with nickname: " + this.nickname);
-                putHistoryInChatArea(readHistory(login + chatHistoryFile)); //при запуске вывести в chatArea историю последней переписки(100 строк)
+                putHistoryInChatArea(readHistory(login + chatHistoryFile));
                 break;
             case AUTH_DENIED:
                 putMessageInChatArea("server", msg);
