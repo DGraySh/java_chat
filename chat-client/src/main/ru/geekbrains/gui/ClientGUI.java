@@ -18,9 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 
-
 public class ClientGUI extends JFrame implements ActionListener, UncaughtExceptionHandler, MessageSocketThreadListener {
-
 
     private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
@@ -44,7 +42,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
     private MessageSocketThread socketThread;
     private String nickname;
     private String login;
-
 
     ClientGUI() {
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -78,7 +75,7 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         add(scrollPaneUsers, BorderLayout.EAST);
         add(panelTop, BorderLayout.NORTH);
         add(panelBottom, BorderLayout.SOUTH);
-        panelBottom.setVisible(false); // скрыть нижнюю панель
+        panelBottom.setVisible(false);
 
         cbAlwaysOnTop.addActionListener(this);
         buttonLogin.addActionListener(e -> {
@@ -109,7 +106,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         if (msg.isEmpty()) {
             return;
         }
-        //проверка на запрос о смене ника "/change_nick##login##new_nickname"
         if (MessageLibrary.getMessageType(msg) == MessageLibrary.MESSAGE_TYPE.CHANGE_NICKNAME) {
             putMessageInChatArea(nickname, msg);
             messageField.setText("");
@@ -117,7 +113,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
             socketThread.sendMessage(msg);
             this.nickname = AuthController.getNewNickname(login);
         } else {
-            //23.06.2020 12:20:25 <Login>: сообщение
             putMessageInChatArea(nickname, msg);
             messageField.setText("");
             messageField.grabFocus();
@@ -125,7 +120,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         }
     }
 
-    // всегда прокручиваем чат вниз
     private void scrollDownChatArea() {
         scrollPaneChatArea.getVerticalScrollBar().addAdjustmentListener(e -> e.getAdjustable().setValue(e.getAdjustable().getMaximum()));
     }
@@ -207,9 +201,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
         chatArea.setText("");
     }
 
-    /*
-     * Получение сообщений от сервера
-     */
     @Override
     public void onMessageReceived(MessageSocketThread thread, String msg) {
         handleMessage(msg);
@@ -241,10 +232,8 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
                 putMessageInChatArea("server", msg);
                 break;
             case USER_LIST:
-                // /user_list##user1##user2##user3
                 String users = msg.substring(MessageLibrary.USER_LIST.length() +
                         MessageLibrary.DELIMITER.length());
-                // user1##user2##user3
                 String[] userArray = users.split(MessageLibrary.DELIMITER);
                 Arrays.sort(userArray);
                 listUsers.setListData(userArray);
@@ -258,7 +247,6 @@ public class ClientGUI extends JFrame implements ActionListener, UncaughtExcepti
                 break;
             default:
                 throw new RuntimeException("Unknown message: " + msg);
-
         }
     }
 }
